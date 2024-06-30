@@ -1,0 +1,402 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Parse_JSON": {
+                "type": "ParseJson",
+                "inputs": {
+                    "content": "@triggerBody()",
+                    "schema": {
+                        "$schema": "http://json-schema.org/draft-07/schema#",
+                        "title": "ReadyForDispatch",
+                        "type": "object",
+                        "properties": {
+                            "controlNumber": {
+                                "type": "integer",
+                                "description": "A control number that increases with any data change"
+                            },
+                            "salesOrder": {
+                                "type": "string",
+                                "description": "The sales order associated with the load"
+                            },
+                            "containers": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "loadId": {
+                                            "type": "string",
+                                            "description": "A unique identifier for each container"
+                                        },
+                                        "containerType": {
+                                            "type": "string",
+                                            "description": "The type of container",
+                                            "enum": [
+                                                "20RF",
+                                                "40RF",
+                                                "20HC",
+                                                "40HC"
+                                            ]
+                                        },
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "itemCode": {
+                                                        "type": "string",
+                                                        "description": "The item code"
+                                                    },
+                                                    "quantity": {
+                                                        "type": "number",
+                                                        "description": "The quantity of the item"
+                                                    },
+                                                    "cartonWeight": {
+                                                        "type": "number",
+                                                        "description": "The weight of each carton in kilograms"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "itemCode",
+                                                    "quantity",
+                                                    "cartonWeight"
+                                                ]
+                                            },
+                                            "description": "The items and quantities to load in each container"
+                                        }
+                                    },
+                                    "required": [
+                                        "loadId",
+                                        "containerType",
+                                        "items"
+                                    ]
+                                }
+                            },
+                            "deliveryAddress": {
+                                "type": "object",
+                                "properties": {
+                                    "street": {
+                                        "type": "string",
+                                        "description": "Street address"
+                                    },
+                                    "city": {
+                                        "type": "string",
+                                        "description": "City"
+                                    },
+                                    "state": {
+                                        "type": "string",
+                                        "description": "State"
+                                    },
+                                    "postalCode": {
+                                        "type": "string",
+                                        "description": "Postal code"
+                                    },
+                                    "country": {
+                                        "type": "string",
+                                        "description": "Country"
+                                    }
+                                },
+                                "required": [
+                                    "street",
+                                    "city",
+                                    "state",
+                                    "postalCode",
+                                    "country"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "controlNumber",
+                            "salesOrder",
+                            "containers",
+                            "deliveryAddress"
+                        ]
+                    }
+                },
+                "runAfter": {},
+                "runtimeConfiguration": {
+                    "secureData": {
+                        "properties": [
+                            "inputs"
+                        ]
+                    }
+                }
+            },
+            "Initialize_variable": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "varCSV",
+                            "type": "array",
+                            "value": []
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "ControlNumber": [
+                        "SUCCEEDED"
+                    ]
+                }
+            },
+            "For_Each_Container": {
+                "type": "Foreach",
+                "foreach": "@body('Parse_JSON')['containers']",
+                "actions": {
+                    "Convert_Container_Type": {
+                        "type": "Compose",
+                        "inputs": "@if(equals(items('For_Each_Container')?['containerType'], '20RF'), 'REF20', if(equals(items('For_Each_Container')?['containerType'], '40RF'), 'REF40', if(equals(items('For_Each_Container')?['containerType'], '20HC'), 'HC20', 'HC40')))"
+                    },
+                    "For_Each_Item": {
+                        "type": "Foreach",
+                        "foreach": "@item()['items']",
+                        "actions": {
+                            "Build_CSV_Row": {
+                                "type": "Compose",
+                                "inputs": {
+                                    "CustomerReference": "@body('Parse_JSON')?['salesOrder']",
+                                    "LoadId": "@items('For_Each_Container')?['loadId']",
+                                    "ContainerType": "@outputs('Convert_Container_Type')",
+                                    "ItemCode": "@items('For_Each_Item')?['itemCode']",
+                                    "ItemQuantity": "@items('For_Each_Item')?['quantity']",
+                                    "ItemWeight": "@items('For_Each_Item')?['cartonWeight']",
+                                    "Street": "@body('Parse_JSON')?['deliveryAddress']?['street']",
+                                    "City": "@body('Parse_JSON')?['deliveryAddress']?['city']",
+                                    "State": "@body('Parse_JSON')?['deliveryAddress']?['state']",
+                                    "PostalCode": "@body('Parse_JSON')?['deliveryAddress']?['postalCode']",
+                                    "Country": "@body('Parse_JSON')?['deliveryAddress']?['country']"
+                                },
+                                "runtimeConfiguration": {
+                                    "secureData": {
+                                        "properties": [
+                                            "inputs"
+                                        ]
+                                    }
+                                }
+                            },
+                            "Append_to_array_variable": {
+                                "type": "AppendToArrayVariable",
+                                "inputs": {
+                                    "name": "varCSV",
+                                    "value": "@outputs('Build_CSV_Row')"
+                                },
+                                "runAfter": {
+                                    "Build_CSV_Row": [
+                                        "SUCCEEDED"
+                                    ]
+                                }
+                            }
+                        },
+                        "runAfter": {
+                            "Convert_Container_Type": [
+                                "SUCCEEDED"
+                            ]
+                        }
+                    }
+                },
+                "runAfter": {
+                    "Initialize_variable": [
+                        "SUCCEEDED"
+                    ]
+                }
+            },
+            "Try_": {
+                "type": "Scope",
+                "actions": {
+                    "Create_CSV_table": {
+                        "type": "Table",
+                        "inputs": {
+                            "from": "@variables('varCSV')",
+                            "format": "CSV"
+                        },
+                        "runtimeConfiguration": {
+                            "secureData": {
+                                "properties": [
+                                    "inputs",
+                                    "outputs"
+                                ]
+                            }
+                        }
+                    },
+                    "Create_file": {
+                        "type": "ApiConnection",
+                        "inputs": {
+                            "host": {
+                                "connection": {
+                                    "referenceName": "sftpwithssh"
+                                }
+                            },
+                            "method": "post",
+                            "body": "@body('Create_CSV_table')",
+                            "headers": {
+                                "ReadFileMetadataFromServer": true
+                            },
+                            "path": "/datasets/default/files",
+                            "queries": {
+                                "folderPath": "bluecorp-incoming",
+                                "name": "@{variables('ControlNo')}.csv",
+                                "queryParametersSingleEncoded": true
+                            },
+                            "retryPolicy": {
+                                "type": "exponential",
+                                "count": 90,
+                                "interval": "PT30S",
+                                "minimumInterval": "PT10S",
+                                "maximumInterval": "PT1H"
+                            }
+                        },
+                        "runAfter": {
+                            "Create_CSV_table": [
+                                "SUCCEEDED"
+                            ]
+                        },
+                        "runtimeConfiguration": {
+                            "contentTransfer": {
+                                "transferMode": "Chunked"
+                            },
+                            "secureData": {
+                                "properties": [
+                                    "inputs",
+                                    "outputs"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "runAfter": {
+                    "For_Each_Container": [
+                        "SUCCEEDED"
+                    ]
+                }
+            },
+            "ControlNumber": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "ControlNo",
+                            "type": "integer",
+                            "value": "@body('Parse_JSON')['controlNumber']"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Parse_JSON": [
+                        "SUCCEEDED"
+                    ]
+                }
+            },
+            "Catch": {
+                "type": "Scope",
+                "actions": {},
+                "runAfter": {
+                    "Try_": [
+                        "SUCCEEDED",
+                        "FAILED"
+                    ]
+                }
+            },
+            "Update_Control_Register_": {
+                "type": "Scope",
+                "actions": {},
+                "runAfter": {
+                    "Try_": [
+                        "SUCCEEDED"
+                    ]
+                }
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "triggers": {
+            "When_a_HTTP_request_is_received": {
+                "type": "Request",
+                "kind": "Http",
+                "inputs": {
+                    "method": "POST",
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "controlNumber": {
+                                "type": "integer"
+                            },
+                            "salesOrder": {
+                                "type": "string"
+                            },
+                            "containers": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "loadId": {
+                                            "type": "string"
+                                        },
+                                        "containerType": {
+                                            "type": "string"
+                                        },
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "itemCode": {
+                                                        "type": "string"
+                                                    },
+                                                    "quantity": {
+                                                        "type": "integer"
+                                                    },
+                                                    "cartonWeight": {
+                                                        "type": "number"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "itemCode",
+                                                    "quantity",
+                                                    "cartonWeight"
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "loadId",
+                                        "containerType",
+                                        "items"
+                                    ]
+                                }
+                            },
+                            "deliveryAddress": {
+                                "type": "object",
+                                "properties": {
+                                    "street": {
+                                        "type": "string"
+                                    },
+                                    "city": {
+                                        "type": "string"
+                                    },
+                                    "state": {
+                                        "type": "string"
+                                    },
+                                    "postalCode": {
+                                        "type": "string"
+                                    },
+                                    "country": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "runtimeConfiguration": {
+                    "secureData": {
+                        "properties": [
+                            "inputs",
+                            "outputs"
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    "kind": "Stateful"
+}
