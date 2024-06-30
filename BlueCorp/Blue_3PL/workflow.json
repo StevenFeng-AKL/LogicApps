@@ -134,7 +134,7 @@
                     ]
                 },
                 "runAfter": {
-                    "ControlNumber": [
+                    "Bypass_Duplicated_Payload": [
                         "SUCCEEDED"
                     ]
                 }
@@ -304,6 +304,50 @@
                         "SUCCEEDED"
                     ]
                 }
+            },
+            "Get_LastUsed_Control_Number": {
+                "type": "Scope",
+                "actions": {
+                    "Demo_Last_Used_Number": {
+                        "type": "InitializeVariable",
+                        "inputs": {
+                            "variables": [
+                                {
+                                    "name": "LastUsedNumber",
+                                    "type": "integer",
+                                    "value": 100
+                                }
+                            ]
+                        }
+                    }
+                },
+                "runAfter": {
+                    "ControlNumber": [
+                        "SUCCEEDED"
+                    ]
+                }
+            },
+            "Bypass_Duplicated_Payload": {
+                "type": "If",
+                "expression": {
+                    "and": [
+                        {
+                            "greater": [
+                                "@variables('ControlNo')",
+                                "@variables('LastUsedNumber')"
+                            ]
+                        }
+                    ]
+                },
+                "actions": {},
+                "else": {
+                    "actions": {}
+                },
+                "runAfter": {
+                    "Get_LastUsed_Control_Number": [
+                        "SUCCEEDED"
+                    ]
+                }
             }
         },
         "contentVersion": "1.0.0.0",
@@ -388,11 +432,10 @@
                     }
                 },
                 "conditions": [
-    {
-      "expression": "@startsWith(triggerOutputs()?['headers']?['Authorization'], 'Bearer')"
-    }
-  ],
-
+                    {
+                        "expression": "@startsWith(triggerOutputs()?['headers']?['Authorization'], 'Bearer')"
+                    }
+                ],
                 "runtimeConfiguration": {
                     "secureData": {
                         "properties": [
