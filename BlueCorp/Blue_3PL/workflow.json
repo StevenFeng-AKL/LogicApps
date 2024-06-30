@@ -387,6 +387,12 @@
                         }
                     }
                 },
+                "conditions": [
+    {
+      "expression": "@startsWith(triggerOutputs()?['headers']?['Authorization'], 'Bearer')"
+    }
+  ],
+
                 "runtimeConfiguration": {
                     "secureData": {
                         "properties": [
