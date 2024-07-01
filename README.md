@@ -38,45 +38,20 @@ By using Azure Integration service, to automate the sales orders processes betwe
 * How/where to download your program
 * Any modifications needed to be made to files/folders
 
-### Executing program
+### Task Design Time and Implementing details 
+* Spent 45x mins to understand business case requirement and the key deliverables (OAuth 2.0, encryption, Outbound fixed IP and duplicated payload control number). 
+* Spent about one hour to build draft flow with Power Automate (my current daily tool).
+* Started Logic Apps with VS code and set up Azure/GitHub/DevOps accounts and enviroments. 
+* Spent about two hours to "rebuild" workflow in VS code with Github source control.
+* Spent about three hours to confirm Logic Apps OAuth 2.0, Telemetry and App insight, DevOPs Pipelines build and deploy scripts.
 
-* How to run the program
-* Step-by-step bullets
-```
-code blocks for commands
-```
 
-## Help
+## Task Comments 
+* Depends on business critical and the data volume, MS Power Automate provides below quick low code options.
+  * Buildin OAuth 2.0 option for https request trigger with selectable users from same MS Entra tenant.
+  * Automation center provides comprehensive visualizations that enable to monitor the health of the automations, quickly detect issues or trends, and troubleshoot problems.
+  * Devloper's solution package and UAT test based Low code developement.
+    
+* Logic Apps provides more enterprise level workflow/integration service design capacity and reliable management platform.
+  
 
-Any advise for common problems or issues.
-```
-command to run if program contains helper info
-```
-
-## Authors
-
-Contributors names and contact info
-
-ex. Dominique Pizzie  
-ex. [@DomPizzie](https://twitter.com/dompizzie)
-
-## Version History
-
-* 0.2
-    * Various bug fixes and optimizations
-    * See [commit change]() or See [release history]()
-* 0.1
-    * Initial Release
-
-## License
-
-This project is licensed under the [NAME HERE] License - see the LICENSE.md file for details
-
-## Acknowledgments
-
-Inspiration, code snippets, etc.
-* [awesome-readme](https://github.com/matiassingers/awesome-readme)
-* [PurpleBooth](https://gist.github.com/PurpleBooth/109311bb0361f32d87a2)
-* [dbader](https://github.com/dbader/readme-template)
-* [zenorocha](https://gist.github.com/zenorocha/4526327)
-* [fvcproductions](https://gist.github.com/fvcproductions/1bfc2d4aecb01a834b46)
