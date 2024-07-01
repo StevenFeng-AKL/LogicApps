@@ -46,12 +46,12 @@ By using Azure Integration service, to automate the sales orders processes betwe
 ## Task Comments 
 * Logic Apps provides more enterprise level workflow/integration service design capacity and reliable management platform.  
   * VS Code fully integrated with GitHub source code control.
-  * To build DevOps piepiles with below sample link, however due to the Azure account and the time issues, did't have a chance to complete ARM reosurce ID set up and full test.
+  * To build DevOps piepiles with below sample link, however due to the Azure account and the time issues, did't have a chance to complete ARM resource ID set up and full test.
   * Most of my current development is with Power Platform solution package, It is a good exercise to build DevOps CI/CD for Azure Logic Apps. I will try to complete it soon.
   * https://github.com/Azure/logicapps/tree/master/azure-devops-sample
     
 * Depends on business critical and the data volume, MS Power Automate provides below quick low code options.
-  * Buildin OAuth 2.0 option for https request trigger with selectable users from same MS Entra tenant.
+  * Built-in OAuth 2.0 option for https request trigger with selectable users from same MS Entra tenant.
   * Automation center provides comprehensive visualizations that enable to monitor the health of the automations, quickly detect issues or trends, and troubleshoot problems.
   * Devloper's solution package and UAT test based Low code developement.
   
